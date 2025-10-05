@@ -1,5 +1,17 @@
 [
   { "name": "ls", "description": "Lista arquivos e diretórios." },
   { "name": "cd", "description": "Muda o diretório atual." },
-  { "name": "pwd", "description": "Mostra o caminho do diretório atual." }
+  { "name": "pwd", "description": "Mostra o caminho do diretório atual." },
+  { "name": "cat", "description": "Exibe o conteúdo de arquivos." },
+  { "name": "echo", "description": "Imprime uma linha de texto." },
+  { "name": "rm", "description": "Remove arquivos ou diretórios." },
+  { "name": "mkdir", "description": "Cria um novo diretório." },
+  { "name": "cp", "description": "Copia arquivos e diretórios." },
+  { "name": "mv", "description": "Move ou renomeia arquivos e diretórios." },
+  { "name": "top", "description": "Mostra processos em tempo real." },
+  { "name": "grep", "description": "Filtra texto em arquivos com expressões regulares." },
+  { "name": "chmod", "description": "Altera permissões de arquivos." },
+  { "name": "chown", "description": "Altera o dono de arquivos ou diretórios." },
+  { "name": "find", "description": "Procura arquivos em diretórios." },
+  { "name": "man", "description": "Exibe o manual de um comando." }
 ]
