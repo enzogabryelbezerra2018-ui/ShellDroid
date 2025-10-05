@@ -1,10 +1,10 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Hosting;
 
-namespace LinuxInfoService
+namespace ShellDroid.CommandAI
 {
     public class LinuxCommand
     {
@@ -12,36 +12,56 @@ namespace LinuxInfoService
         public string Description { get; set; } = "";
     }
 
-    public static class CommandDatabase
+    public static class LinuxCommandService
     {
-        public static List<LinuxCommand> Commands = new()
-        {
-            new LinuxCommand { Name = "ls", Description = "Lista arquivos e diretórios." },
-            new LinuxCommand { Name = "cd", Description = "Muda o diretório atual." },
-            new LinuxCommand { Name = "pwd", Description = "Mostra o caminho do diretório atual." },
-            new LinuxCommand { Name = "cat", Description = "Exibe o conteúdo de arquivos." },
-            new LinuxCommand { Name = "echo", Description = "Imprime uma linha de texto." },
-            new LinuxCommand { Name = "rm", Description = "Remove arquivos ou diretórios." },
-            new LinuxCommand { Name = "mkdir", Description = "Cria um novo diretório." },
-            new LinuxCommand { Name = "cp", Description = "Copia arquivos e diretórios." },
-            new LinuxCommand { Name = "mv", Description = "Move ou renomeia arquivos e diretórios." },
-            new LinuxCommand { Name = "top", Description = "Mostra processos em tempo real." }
-        };
-    }
+        private static readonly string JsonPath =
+            Path.Combine(AppContext.BaseDirectory, "LinuxCommands.json");
 
-    public class LinuxCommandService
-    {
+        private static List<LinuxCommand> _commands = new();
+
+        static LinuxCommandService()
+        {
+            if (File.Exists(JsonPath))
+            {
+                var json = File.ReadAllText(JsonPath);
+                _commands = JsonSerializer.Deserialize<List<LinuxCommand>>(json)
+                            ?? new List<LinuxCommand>();
+            }
+        }
+
         public static void MapEndpoints(WebApplication app)
         {
-            app.MapGet("/api/commands", () => CommandDatabase.Commands);
+            app.MapGet("/", () => "ShellDroid.CommandAI ativo 🚀");
+
+            app.MapGet("/api/commands", () => _commands);
 
             app.MapGet("/api/command/{name}", (string name) =>
             {
-                var cmd = CommandDatabase.Commands
-                    .Find(c => c.Name.Equals(name, System.StringComparison.OrdinalIgnoreCase));
-                return cmd is null
-                    ? Results.NotFound(new { message = "Comando não encontrado." })
-                    : Results.Json(cmd);
+                var cmd = _commands.Find(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+                if (cmd != null) return Results.Json(cmd);
+
+                var suggestion = LinuxCommandLearner.FindClosest(name);
+                if (suggestion != null)
+                {
+                    return Results.Json(new
+                    {
+                        message = $"❌ Comando '{name}' não encontrado. Você quis dizer '{suggestion.Name}'?",
+                        suggestion
+                    });
+                }
+
+                return Results.NotFound(new { message = $"❌ Comando '{name}' não encontrado e sem sugestão." });
+            });
+
+            // Novo endpoint: aprendizado de comandos
+            app.MapPost("/api/learn", async (HttpRequest req) =>
+            {
+                var data = await JsonSerializer.DeserializeAsync<Dictionary<string, string>>(req.Body);
+                if (data == null || !data.ContainsKey("name") || !data.ContainsKey("description"))
+                    return Results.BadRequest(new { message = "Formato inválido. Use { name, description }" });
+
+                string result = LinuxCommandLearner.LearnNewCommand(data["name"], data["description"]);
+                return Results.Json(new { message = result });
             });
         }
     }
