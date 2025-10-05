@@ -1,0 +1,5 @@
+[
+  { "name": "ls", "description": "Lista arquivos e diretórios." },
+  { "name": "cd", "description": "Muda o diretório atual." },
+  { "name": "pwd", "description": "Mostra o caminho do diretório atual." }
+]
